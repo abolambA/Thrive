@@ -17,6 +17,11 @@ void main() async {
     systemNavigationBarColor: Colors.white,
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
+  // Lock to portrait
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   runApp(const ThriveApp());
 }
 
@@ -35,13 +40,11 @@ class ThriveApp extends StatelessWidget {
           case '/splash':
             return _fade(const SplashScreen());
           case '/onboard':
-            return _slide(OnboardingScreen(onComplete: () {}), vertical: false);
+            return _slide(const OnboardingScreen(), vertical: false);
           case '/home':
             return _fade(const AppShell());
           case '/history':
             return _slide(const HistoryScreen());
-          case '/checkin':
-            return _slide(CheckInScreen(existing: settings.arguments as dynamic), vertical: true);
           default:
             return _fade(const AppShell());
         }
@@ -50,25 +53,26 @@ class ThriveApp extends StatelessWidget {
   }
 
   PageRoute _fade(Widget page) => PageRouteBuilder(
-    pageBuilder: (_, __, ___) => page,
-    transitionsBuilder: (_, a, __, child) => FadeTransition(opacity: a, child: child),
-    transitionDuration: const Duration(milliseconds: 350),
-  );
+        pageBuilder: (_, __, ___) => page,
+        transitionsBuilder: (_, a, __, child) =>
+            FadeTransition(opacity: a, child: child),
+        transitionDuration: const Duration(milliseconds: 350),
+      );
 
   PageRoute _slide(Widget page, {bool vertical = false}) => PageRouteBuilder(
-    pageBuilder: (_, __, ___) => page,
-    transitionsBuilder: (_, a, __, child) => SlideTransition(
-      position: Tween(
-        begin: vertical ? const Offset(0, 1) : const Offset(1, 0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
-      child: child,
-    ),
-    transitionDuration: const Duration(milliseconds: 380),
-  );
+        pageBuilder: (_, __, ___) => page,
+        transitionsBuilder: (_, a, __, child) => SlideTransition(
+          position: Tween(
+            begin: vertical ? const Offset(0, 1) : const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
+          child: child,
+        ),
+        transitionDuration: const Duration(milliseconds: 380),
+      );
 }
 
-// ─── Main App Shell ─────────────────────────────────────────────────────────
+// ─── Main App Shell ──────────────────────────────────────────────────────────
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -98,7 +102,8 @@ class _AppShellState extends State<AppShell> {
 
   Widget _fab(BuildContext context) {
     return Container(
-      height: 62, width: 62,
+      height: 62,
+      width: 62,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [AppTheme.primaryDark, AppTheme.primary, AppTheme.primaryLight],
@@ -107,7 +112,11 @@ class _AppShellState extends State<AppShell> {
         ),
         shape: BoxShape.circle,
         boxShadow: [
-          BoxShadow(color: AppTheme.primary.withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 6)),
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
       child: FloatingActionButton(
@@ -116,15 +125,19 @@ class _AppShellState extends State<AppShell> {
         elevation: 0,
         shape: const CircleBorder(),
         onPressed: () async {
-          await Navigator.push(context, PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const CheckInScreen(),
-            transitionsBuilder: (_, anim, __, child) => SlideTransition(
-              position: Tween(begin: const Offset(0, 1), end: Offset.zero)
-                  .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-              child: child,
+          await Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => const CheckInScreen(),
+              transitionsBuilder: (_, anim, __, child) => SlideTransition(
+                position: Tween(begin: const Offset(0, 1), end: Offset.zero)
+                    .animate(CurvedAnimation(
+                        parent: anim, curve: Curves.easeOutCubic)),
+                child: child,
+              ),
+              transitionDuration: const Duration(milliseconds: 380),
             ),
-            transitionDuration: const Duration(milliseconds: 380),
-          ));
+          );
           _homeKey.currentState?.refresh();
         },
         child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
@@ -161,7 +174,10 @@ class _AppShellState extends State<AppShell> {
     final sel = _tab == i;
     return Expanded(
       child: InkWell(
-        onTap: () { HapticFeedback.selectionClick(); setState(() => _tab = i); },
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() => _tab = i);
+        },
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -169,18 +185,21 @@ class _AppShellState extends State<AppShell> {
             duration: const Duration(milliseconds: 220),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
-              color: sel ? AppTheme.primary.withOpacity(0.1) : Colors.transparent,
+              color: sel
+                  ? AppTheme.primary.withValues(alpha: 0.1)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(sel ? activeIcon : inactiveIcon,
                 color: sel ? AppTheme.primary : AppTheme.textMut, size: 23),
           ),
           const SizedBox(height: 3),
-          Text(label, style: TextStyle(
-            fontSize: 11,
-            fontWeight: sel ? FontWeight.w700 : FontWeight.w400,
-            color: sel ? AppTheme.primary : AppTheme.textMut,
-          )),
+          Text(label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: sel ? FontWeight.w700 : FontWeight.w400,
+                color: sel ? AppTheme.primary : AppTheme.textMut,
+              )),
         ]),
       ),
     );
@@ -189,24 +208,33 @@ class _AppShellState extends State<AppShell> {
   Widget _historyItem() {
     return Expanded(
       child: InkWell(
-        onTap: () => Navigator.push(context, PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const HistoryScreen(),
-          transitionsBuilder: (_, a, __, child) => SlideTransition(
-            position: Tween(begin: const Offset(1, 0), end: Offset.zero)
-                .animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
-            child: child,
+        onTap: () => Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const HistoryScreen(),
+            transitionsBuilder: (_, a, __, child) => SlideTransition(
+              position: Tween(begin: const Offset(1, 0), end: Offset.zero)
+                  .animate(
+                      CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
+              child: child,
+            ),
+            transitionDuration: const Duration(milliseconds: 350),
           ),
-          transitionDuration: const Duration(milliseconds: 350),
-        )),
+        ),
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-            child: const Icon(Icons.history_rounded, color: AppTheme.textMut, size: 23),
+            child: const Icon(Icons.history_rounded,
+                color: AppTheme.textMut, size: 23),
           ),
           const SizedBox(height: 3),
-          const Text('History', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: AppTheme.textMut)),
+          const Text('History',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                  color: AppTheme.textMut)),
         ]),
       ),
     );
