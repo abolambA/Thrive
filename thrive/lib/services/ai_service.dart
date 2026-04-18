@@ -5,8 +5,18 @@ import '../models/ai_advice.dart';
 import 'risk_engine.dart';
 
 class AIService {
-  static const String _key = 'AIzaSyAvr-g7yeJZXXR3-Mp1z1V5QDZ-vWAeHrg';
-  static const String _url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+  // ── Set your key here locally — NEVER commit this file with a real key ──
+  // To use: replace the empty string with your Gemini API key
+  // Get one free at: https://aistudio.google.com/apikey
+  static const String _key = '';
+
+  static const String _url =
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+  /// Set this at runtime from main.dart so the key never lives in source code
+  static String _runtimeKey = '';
+  static void setApiKey(String key) => _runtimeKey = key;
+  static String get _activeKey => _runtimeKey.isNotEmpty ? _runtimeKey : _key;
 
   static Future<AIAdvice> analyze({
     required DailyCheckIn today,
@@ -20,9 +30,13 @@ class AIService {
     final rl = RiskEngine.level(rs);
     final prompt = _prompt(today, rs, rl, week, userName, examMode, examDate, examSubject);
 
+    if (_activeKey.isEmpty) {
+      return AIAdvice(date: today.date, advice: _fallback(rs, today), riskScore: rs, riskLevel: rl);
+    }
+
     try {
       final res = await http.post(
-        Uri.parse('$_url?key=$_key'),
+        Uri.parse('$_url?key=$_activeKey'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'contents': [{'parts': [{'text': prompt}]}],
